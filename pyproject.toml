@@ -25,6 +25,7 @@ dependencies = [
     "pymupdf-layout>=1.27.1",
     "dotenv>=0.9.9",
     "peft>=0.18.1",
+    "transformers<5.5.1",
 ]
 
 [tool.uv.sources]
