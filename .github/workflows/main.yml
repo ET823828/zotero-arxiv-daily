@@ -31,4 +31,5 @@ jobs:
           printf "%b\n" "$CUSTOM_CONFIG" > config/custom.yaml
           echo "Use custom config: "
           cat config/custom.yaml
+          uv add sentence-transformers==5.3.0
           uv run src/zotero_arxiv_daily/main.py
