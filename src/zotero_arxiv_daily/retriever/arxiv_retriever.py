@@ -12,6 +12,7 @@ from queue import Empty
 from typing import Any, Callable, TypeVar
 from loguru import logger
 import requests
+from time import sleep
 
 T = TypeVar("T")
 
@@ -129,6 +130,7 @@ class ArxivRetriever(BaseRetriever):
             batch = list(client.results(search))
             bar.update(len(batch))
             raw_papers.extend(batch)
+            sleep(3)
         bar.close()
 
         return raw_papers
