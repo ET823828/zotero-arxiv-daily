@@ -114,7 +114,7 @@ class ArxivRetriever(BaseRetriever):
             raise ValueError("category must be specified for arxiv.")
 
     def _retrieve_raw_papers(self) -> list[ArxivResult]:
-        client = arxiv.Client(num_retries=10, delay_seconds=10)
+        client = arxiv.Client(num_retries=5, delay_seconds=30)
         query = '+'.join(self.config.source.arxiv.category)
         feed = feedparser.parse(f"https://rss.arxiv.org/atom/{query}")
         if 'Feed error for query' in feed.feed.title:
@@ -125,12 +125,24 @@ class ArxivRetriever(BaseRetriever):
             all_paper_ids = all_paper_ids[:10]
 
         bar = tqdm(total=len(all_paper_ids))
-        for i in range(0,len(all_paper_ids),20):
-            search = arxiv.Search(id_list=all_paper_ids[i:i+20])
-            batch = list(client.results(search))
-            bar.update(len(batch))
-            raw_papers.extend(batch)
-            sleep(3)
+        for i in range(0, len(all_paper_ids), 20):
+            batch_ids = all_paper_ids[i:i+20]
+            for attempt in range(3):
+                try:
+                    search = arxiv.Search(id_list=batch_ids)
+                    batch = list(client.results(search))
+                    bar.update(len(batch))
+                    raw_papers.extend(batch)
+                    break
+                except Exception as e:
+                    if attempt < 2:
+                        wait = 60 * (attempt + 1)
+                        logger.warning(f"Batch {i//20+1} failed ({e}), retrying in {wait}s...")
+                        sleep(wait)
+                    else:
+                        logger.warning(f"Batch {i//20+1} failed after 3 attempts, skipping {len(batch_ids)} papers")
+                        bar.update(len(batch_ids))
+            sleep(5)
         bar.close()
 
         return raw_papers
